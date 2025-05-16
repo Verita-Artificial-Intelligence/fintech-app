@@ -1,70 +1,89 @@
-# Getting Started with Create React App
+# Royal Business Bank Financial Application
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A comprehensive financial technology platform with three main modules:
 
-## Available Scripts
+1. **Unified FBO-Ledger Monitoring**
+   - Real-time visibility on every sub-account
+   - Automated BSA/AML rules & one-click SAR/CTR reports
+   - Row-level encryption + full audit trails
 
-In the project directory, you can run:
+2. **Fraud-Detection & Compliance Toolkit**
+   - Live card-fraud alerts and threat-simulation "red team" testing
+   - Continuous PCI/GDPR/SOC 2 evidence packs
+   - KPI dashboard for fraud rate, MTTR, and open gaps
 
-### `npm start`
+3. **Automated Underwriting Engine**
+   - OCR/LLM pipeline that scores W-2s, bank statements, FICO, DSCR, etc.
+   - 0-100 eligibility score with an explain-why panel
+   - Human-in-the-loop override; feedback retrains the model
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Quick Start
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+To run the Royal Business Bank platform, we provide multiple options depending on your needs:
 
-### `npm test`
+### Option 1: Run the HTML Version (Guaranteed to Work)
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+This is the simplest option and requires no dependencies:
 
-### `npm run build`
+```bash
+cd fintech-app/fintech-app
+./serve-app.sh
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+The application will automatically open in your browser at:
+http://localhost:3006/simplified-app.html
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Option 2: Run the Full React Application
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+For the complete React application with all features:
 
-### `npm run eject`
+```bash
+cd fintech-app/fintech-app
+./start-app.sh
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+The application will be available at:
+http://localhost:3006
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Color Scheme
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+The Royal Business Bank website employs a clean and professional color scheme centered around shades of blue, complemented by white and gray accents. This palette aligns with the bank's emphasis on trust, stability, and clarity.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### Primary Colors
+- **Royal Blue:** A deep, vivid blue (#002366) that serves as the dominant color throughout the site. This hue is commonly associated with professionalism and reliability in the financial industry.
+- **White:** Used extensively for backgrounds and text areas, providing a clean and uncluttered appearance that enhances readability.
+- **Gray:** Utilized for secondary elements such as navigation menus and footers, offering a neutral contrast to the primary blue.
 
-## Learn More
+### Color Palette Summary
+| Color Name  | Hex Code | Usage |
+|-------------|----------|-------|
+| Royal Blue  | #002366  | Primary branding, headers, buttons |
+| White       | #FFFFFF  | Backgrounds, text areas |
+| Gray        | #808080  | Navigation, footers, secondary text |
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+This color scheme reflects Royal Business Bank's commitment to professionalism and community focus.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Features
 
-### Code Splitting
+- Interactive dashboards for each module
+- Real-time monitoring and alerts
+- Responsive design for all device sizes
+- Rich data visualization
+- Comprehensive financial tools
+- Secure authentication and user management
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## Troubleshooting
 
-### Analyzing the Bundle Size
+If you encounter any issues:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+1. Make sure port 3006 is not already in use
+2. Try the HTML version first to confirm your environment is working
+3. Check for any console errors in your browser's developer tools
 
-### Making a Progressive Web App
+## Project Structure
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- `/src/components/` - Reusable UI components
+- `/src/pages/` - Main application pages
+- `/src/api/` - API service interfaces
+- `/src/utils/` - Utility functions
+- `/src/hooks/` - Custom React hooks
