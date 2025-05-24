@@ -1,6 +1,6 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 
 import Layout from './components/common/Layout';
@@ -9,8 +9,14 @@ import LedgerMonitoring from './pages/LedgerMonitoring';
 import FraudDetection from './pages/FraudDetection';
 import UnderwritingEngine from './pages/UnderwritingEngine';
 import NotFound from './pages/NotFound';
+import rbbTheme from './theme/rbb';
+import './i18n/config'; // Initialize i18n
 
-const theme = createTheme({
+const theme = rbbTheme; // Using RBB theme
+
+// Legacy theme definition preserved for reference
+/*
+const oldTheme = createTheme({
   palette: {
     primary: {
       main: '#002366', // Royal Blue
@@ -86,6 +92,7 @@ const theme = createTheme({
     },
   },
 });
+*/
 
 function App() {
   return (
@@ -94,11 +101,8 @@ function App() {
       <Router>
         <Layout>
           <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/ledger" element={<LedgerMonitoring />} />
+            <Route path="/" element={<Dashboard />} />
             <Route path="/ledger-monitoring" element={<LedgerMonitoring />} />
-            <Route path="/fraud" element={<FraudDetection />} />
             <Route path="/fraud-detection" element={<FraudDetection />} />
             <Route path="/underwriting" element={<UnderwritingEngine />} />
             <Route path="*" element={<NotFound />} />
@@ -109,4 +113,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;

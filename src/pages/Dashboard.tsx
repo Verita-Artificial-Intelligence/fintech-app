@@ -1,49 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Grid, 
-  Paper, 
-  Typography, 
-  Button, 
-  Box, 
-  Chip, 
-  Alert, 
-  Card, 
-  CardContent, 
-  Switch, 
-  FormControlLabel,
-  Avatar,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar,
-  Divider,
-  LinearProgress,
-  IconButton,
-  Badge,
-  Fab,
-  Tooltip,
-  CardHeader,
-  CircularProgress
-} from '@mui/material';
+import { Grid, Paper, Typography, Button, Box, Chip, Alert, Card, CardContent, Switch, FormControlLabel } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import SecurityIcon from '@mui/icons-material/Security';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
-import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import WarningIcon from '@mui/icons-material/Warning';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ErrorIcon from '@mui/icons-material/Error';
-import InfoIcon from '@mui/icons-material/Info';
-import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
-import PeopleIcon from '@mui/icons-material/People';
-import ShowChartIcon from '@mui/icons-material/ShowChart';
-import SpeedIcon from '@mui/icons-material/Speed';
-import RefreshIcon from '@mui/icons-material/Refresh';
-import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import { useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import { useRealTimeData } from '../hooks/useRealTimeData';
@@ -51,678 +14,380 @@ import { aiInsights } from '../utils/aiInsights';
 import BiometricAuth from '../components/common/BiometricAuth';
 import DemoTour from '../components/common/DemoTour';
 import {
-  AreaChart,
-  Area,
   BarChart,
   Bar,
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip as RechartsTooltip,
+  Tooltip,
   ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
-  LineChart,
-  Line,
-  ComposedChart,
-  Legend
 } from 'recharts';
 
-// Styled Components
-const StyledCard = styled(Card)(({ theme }) => ({
-  height: '100%',
-  transition: 'all 0.3s ease',
-  '&:hover': {
-    transform: 'translateY(-2px)',
-    boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.12)',
-  },
-}));
-
-const MetricCard = styled(Card)<{ trend?: 'up' | 'down' | 'neutral' }>(({ theme, trend }) => ({
-  height: '100%',
-  background: trend === 'up' ? 'linear-gradient(135deg, #e8f5e8 0%, #f1f8e9 100%)' :
-              trend === 'down' ? 'linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%)' :
-              'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
-  borderLeft: `4px solid ${
-    trend === 'up' ? theme.palette.success.main :
-    trend === 'down' ? theme.palette.error.main :
-    theme.palette.primary.main
-  }`,
-}));
-
-const LiveIndicator = styled(Box)(({ theme }) => ({
+const StyledPaper = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(3),
   display: 'flex',
-  alignItems: 'center',
-  '&::before': {
-    content: '""',
-    width: 8,
-    height: 8,
-    borderRadius: '50%',
-    backgroundColor: theme.palette.success.main,
-    marginRight: theme.spacing(1),
-    animation: 'pulse 1.5s infinite',
-  },
-  '@keyframes pulse': {
-    '0%': { opacity: 1 },
-    '50%': { opacity: 0.5 },
-    '100%': { opacity: 1 },
-  },
+  flexDirection: 'column',
+  height: '100%',
 }));
 
-const AlertCard = styled(Card)<{ severity: 'error' | 'warning' | 'info' | 'success' }>(({ theme, severity }) => ({
-  borderLeft: `4px solid ${theme.palette[severity].main}`,
-  marginBottom: theme.spacing(1),
+const ProductCard = styled(Paper)(({ theme }) => ({
+  padding: theme.spacing(3),
+  display: 'flex',
+  flexDirection: 'column',
+  height: '100%',
+  position: 'relative',
+  borderLeft: '4px solid',
+  transition: 'transform 0.2s ease-in-out',
   '&:hover': {
-    backgroundColor: theme.palette.action.hover,
+    transform: 'translateY(-4px)',
+    boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.1)',
   },
 }));
 
-// Chart Data
-const marketData = [
-  { time: '09:00', price: 4250, volume: 1200, transactions: 45 },
-  { time: '09:30', price: 4275, volume: 1800, transactions: 67 },
-  { time: '10:00', price: 4290, volume: 2100, transactions: 89 },
-  { time: '10:30', price: 4305, volume: 1900, transactions: 72 },
-  { time: '11:00', price: 4320, volume: 2300, transactions: 94 },
-  { time: '11:30', price: 4315, volume: 2000, transactions: 81 },
-  { time: '12:00', price: 4340, volume: 2500, transactions: 108 },
+const barChartData = [
+  { name: 'Jan', transactions: 4000, accounts: 2400 },
+  { name: 'Feb', transactions: 3000, accounts: 1398 },
+  { name: 'Mar', transactions: 2000, accounts: 9800 },
+  { name: 'Apr', transactions: 2780, accounts: 3908 },
+  { name: 'May', transactions: 1890, accounts: 4800 },
+  { name: 'Jun', transactions: 2390, accounts: 3800 },
+  { name: 'Jul', transactions: 3490, accounts: 4300 },
 ];
 
-const riskDistribution = [
-  { name: 'Low Risk', value: 68, color: '#4caf50' },
-  { name: 'Medium Risk', value: 24, color: '#ff9800' },
-  { name: 'High Risk', value: 6, color: '#f44336' },
-  { name: 'Critical', value: 2, color: '#d32f2f' },
+const pieChartData = [
+  { name: 'Approved', value: 78 },
+  { name: 'In Review', value: 17 },
+  { name: 'Rejected', value: 5 },
 ];
 
-const complianceMetrics = [
-  { metric: 'BSA Reports', current: 45, target: 50, completion: 90 },
-  { metric: 'KYC Reviews', current: 128, target: 135, completion: 95 },
-  { metric: 'OFAC Checks', current: 234, target: 240, completion: 98 },
-  { metric: 'SAR Filings', current: 12, target: 15, completion: 80 },
-];
-
-const portfolioData = [
-  { month: 'Jan', loans: 45000000, deposits: 120000000, revenue: 2400000 },
-  { month: 'Feb', loans: 48000000, deposits: 125000000, revenue: 2600000 },
-  { month: 'Mar', loans: 52000000, deposits: 130000000, revenue: 2800000 },
-  { month: 'Apr', loans: 55000000, deposits: 128000000, revenue: 2950000 },
-  { month: 'May', loans: 58000000, deposits: 135000000, revenue: 3100000 },
-  { month: 'Jun', loans: 61000000, deposits: 142000000, revenue: 3250000 },
-];
+const COLORS = ['#002366', '#0056b3', '#808080'];
 
 const Dashboard: React.FC = () => {
-  const theme = useTheme();
   const navigate = useNavigate();
-  
-  // Real-time data
-  const { transactions, alerts, customers, isConnected, metrics } = useRealTimeData();
-  
-  // State management
+  const theme = useTheme();
   const [showBiometric, setShowBiometric] = useState(false);
   const [showTour, setShowTour] = useState(false);
-  const [realtimeEnabled, setRealtimeEnabled] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [realtimeEnabled, setRealtimeEnabled] = useState(false);
+  const [predictions, setPredictions] = useState<any[]>([]);
   
-  // Live market simulation
-  const [marketPrice, setMarketPrice] = useState(4340);
-  const [priceChange, setPriceChange] = useState(0);
+  // Real-time data hook
+  const { 
+    transactions, 
+    alerts, 
+    isConnected, 
+    metrics, 
+    subscribeToTransactions, 
+    unsubscribeFromTransactions 
+  } = useRealTimeData();
   
+  // Effect for managing real-time connection
   useEffect(() => {
-    const interval = setInterval(() => {
-      const change = (Math.random() - 0.5) * 20;
-      setMarketPrice(prev => {
-        const newPrice = prev + change;
-        setPriceChange(change);
-        return Math.max(4000, Math.min(5000, newPrice));
-      });
-    }, 3000);
-    
-    return () => clearInterval(interval);
-  }, []);
-
-  // Handlers
-  const handleQuickAction = (action: string) => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 2000);
-    
-    switch (action) {
-      case 'ledger':
-        navigate('/ledger');
-        break;
-      case 'fraud':
-        navigate('/fraud');
-        break;
-      case 'underwriting':
-        navigate('/underwriting');
-        break;
-      case 'biometric':
-        setShowBiometric(true);
-        break;
-      case 'tour':
-        setShowTour(true);
-        break;
+    if (realtimeEnabled) {
+      subscribeToTransactions();
+    } else {
+      unsubscribeFromTransactions();
     }
+    
+    return () => {
+      unsubscribeFromTransactions();
+    };
+  }, [realtimeEnabled, subscribeToTransactions, unsubscribeFromTransactions]);
+
+  // Generate AI predictions when data changes
+  useEffect(() => {
+    if (transactions.length > 0) {
+      const compliancePredictions = aiInsights.generateCompliancePredictions(transactions, []);
+      const fraudPredictions = aiInsights.generateFraudPredictions(transactions);
+      const businessInsights = aiInsights.generateBusinessInsights(transactions, []);
+      
+      setPredictions([...compliancePredictions, ...fraudPredictions, ...businessInsights].slice(0, 3));
+    }
+  }, [transactions]);
+  
+  const handleNavigate = (path: string) => {
+    navigate(path);
   };
 
-  const handleRefresh = () => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1500);
+  const handleBiometricSuccess = () => {
+    console.log('Dashboard biometric authentication successful');
   };
-
+  
   return (
-    <Box sx={{ flexGrow: 1, p: 3 }}>
-      {/* Header Section */}
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Box>
-          <Typography variant="h4" fontWeight="bold" color="primary">
-            Business Banking Dashboard
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-            <LiveIndicator>
-              <Typography variant="body2" color="text.secondary">
-                Live Data Stream Active
-              </Typography>
-            </LiveIndicator>
-            <Chip 
-              label={`${transactions.length} Active Transactions`} 
-              size="small" 
-              color="primary" 
-              sx={{ ml: 2 }}
+    <Grid container spacing={3}>
+      <Grid item xs={12}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+          <Box>
+            <Typography variant="h4" gutterBottom>
+              Dashboard
+              {isConnected && (
+                <Chip 
+                  label="LIVE" 
+                  size="small" 
+                  color="success" 
+                  sx={{ ml: 2, animation: 'pulse 1.5s infinite' }}
+                />
+              )}
+            </Typography>
+            <Typography variant="body1" color="text.secondary" paragraph>
+              Welcome to Royal Business Bank. View your key metrics and access all platform features.
+            </Typography>
+            {realtimeEnabled && (
+              <Alert severity="info" sx={{ mt: 1, maxWidth: 600 }}>
+                Real-time analytics active - AI insights update automatically as new data arrives
+              </Alert>
+            )}
+          </Box>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <FormControlLabel
+              control={
+                <Switch 
+                  checked={realtimeEnabled} 
+                  onChange={() => setRealtimeEnabled(!realtimeEnabled)}
+                  color="primary"
+                />
+              }
+              label="Real-time Mode"
             />
-            <Chip 
-              label={`${customers.length} Customers`} 
-              size="small" 
-              color="secondary" 
-              sx={{ ml: 1 }}
-            />
+            <Box>
+              <Button 
+                variant="outlined" 
+                onClick={() => setShowBiometric(true)}
+                sx={{ mr: 1 }}
+              >
+                Secure Access
+              </Button>
+              <Button 
+                variant="outlined" 
+                onClick={() => setShowTour(true)}
+              >
+                Demo Tour
+              </Button>
+            </Box>
           </Box>
         </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Tooltip title="Refresh Data">
-            <IconButton onClick={handleRefresh} disabled={refreshing}>
-              {refreshing ? <CircularProgress size={24} /> : <RefreshIcon />}
-            </IconButton>
-          </Tooltip>
-          <FormControlLabel
-            control={
-              <Switch 
-                checked={realtimeEnabled} 
-                onChange={(e) => setRealtimeEnabled(e.target.checked)}
-                color="primary"
-              />
-            }
-            label="Real-time"
-          />
-          <Button 
-            variant="outlined" 
-            onClick={() => handleQuickAction('tour')}
-            startIcon={<InfoIcon />}
-          >
-            Demo Tour
-          </Button>
-        </Box>
-      </Box>
-
-      <Grid container spacing={3}>
-        {/* Key Performance Metrics */}
-        <Grid item xs={12} md={3}>
-          <MetricCard trend="up">
-            <CardContent>
+      </Grid>
+      
+      {/* Product Cards */}
+      <Grid item xs={12} md={4}>
+        <ProductCard sx={{ borderLeftColor: 'primary.main' }}>
+          <Box display="flex" alignItems="center" mb={2}>
+            <AccountBalanceIcon color="primary" sx={{ fontSize: 28, mr: 1 }} />
+            <Typography variant="h6">FBO-Ledger Monitoring</Typography>
+          </Box>
+          <Typography variant="body2" color="text.secondary" paragraph sx={{ mb: 3 }}>
+            Real-time visibility on every sub-account with automated BSA/AML rules and enhanced security.
+          </Typography>
+          <Box sx={{ mt: 'auto' }}>
+            <Button 
+              variant="outlined" 
+              color="primary" 
+              endIcon={<ArrowForwardIcon />}
+              onClick={() => handleNavigate('/ledger-monitoring')}
+            >
+              View Dashboard
+            </Button>
+          </Box>
+        </ProductCard>
+      </Grid>
+      
+      <Grid item xs={12} md={4}>
+        <ProductCard sx={{ borderLeftColor: 'secondary.main' }}>
+          <Box display="flex" alignItems="center" mb={2}>
+            <SecurityIcon color="secondary" sx={{ fontSize: 28, mr: 1 }} />
+            <Typography variant="h6">Fraud Detection</Typography>
+          </Box>
+          <Typography variant="body2" color="text.secondary" paragraph sx={{ mb: 3 }}>
+            Advanced fraud alerts and compliance tools with continuous regulatory compliance monitoring.
+          </Typography>
+          <Box sx={{ mt: 'auto' }}>
+            <Button 
+              variant="outlined" 
+              color="secondary" 
+              endIcon={<ArrowForwardIcon />}
+              onClick={() => handleNavigate('/fraud-detection')}
+            >
+              View Dashboard
+            </Button>
+          </Box>
+        </ProductCard>
+      </Grid>
+      
+      <Grid item xs={12} md={4}>
+        <ProductCard sx={{ borderLeftColor: '#ff9800' }}>
+          <Box display="flex" alignItems="center" mb={2}>
+            <AssessmentIcon sx={{ fontSize: 28, mr: 1, color: '#ff9800' }} />
+            <Typography variant="h6">Underwriting Engine</Typography>
+          </Box>
+          <Typography variant="body2" color="text.secondary" paragraph sx={{ mb: 3 }}>
+            Intelligent underwriting with ML-powered risk assessment and automated document processing.
+          </Typography>
+          <Box sx={{ mt: 'auto' }}>
+            <Button 
+              variant="outlined" 
+              sx={{ color: '#ff9800', borderColor: '#ff9800' }} 
+              endIcon={<ArrowForwardIcon />}
+              onClick={() => handleNavigate('/underwriting')}
+            >
+              View Dashboard
+            </Button>
+          </Box>
+        </ProductCard>
+      </Grid>
+      
+      {/* AI-Powered Insights */}
+      {predictions.length > 0 && (
+        <>
+          <Grid item xs={12}>
+            <Paper sx={{ p: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Avatar sx={{ bgcolor: 'success.main', mr: 2 }}>
-                  <MonetizationOnIcon />
-                </Avatar>
-                <Box>
-                  <Typography variant="h4" fontWeight="bold">
-                    $142.8M
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Total Deposits
-                  </Typography>
-                </Box>
+                <SmartToyIcon color="primary" sx={{ mr: 1 }} />
+                <Typography variant="h6">AI-Powered Insights</Typography>
+                <Chip 
+                  label={`${predictions.length} predictions`} 
+                  size="small" 
+                  sx={{ ml: 2 }}
+                />
               </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <TrendingUpIcon color="success" sx={{ mr: 1 }} />
-                <Typography variant="body2" color="success.main">
-                  +12.5% vs last month
-                </Typography>
-              </Box>
-            </CardContent>
-          </MetricCard>
-        </Grid>
-
-        <Grid item xs={12} md={3}>
-          <MetricCard trend="up">
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Avatar sx={{ bgcolor: 'primary.main', mr: 2 }}>
-                  <AccountBalanceIcon />
-                </Avatar>
-                <Box>
-                  <Typography variant="h4" fontWeight="bold">
-                    $61.2M
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Active Loans
-                  </Typography>
-                </Box>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <TrendingUpIcon color="success" sx={{ mr: 1 }} />
-                <Typography variant="body2" color="success.main">
-                  +8.3% vs last month
-                </Typography>
-              </Box>
-            </CardContent>
-          </MetricCard>
-        </Grid>
-
-        <Grid item xs={12} md={3}>
-          <MetricCard trend="neutral">
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Avatar sx={{ bgcolor: 'warning.main', mr: 2 }}>
-                  <SecurityIcon />
-                </Avatar>
-                <Box>
-                  <Typography variant="h4" fontWeight="bold">
-                    {alerts.length + 28}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Active Alerts
-                  </Typography>
-                </Box>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <WarningIcon color="warning" sx={{ mr: 1 }} />
-                <Typography variant="body2" color="warning.main">
-                  {alerts.filter(a => a.severity === 'High').length} high priority
-                </Typography>
-              </Box>
-            </CardContent>
-          </MetricCard>
-        </Grid>
-
-        <Grid item xs={12} md={3}>
-          <MetricCard trend="up">
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Avatar sx={{ bgcolor: 'secondary.main', mr: 2 }}>
-                  <PeopleIcon />
-                </Avatar>
-                <Box>
-                  <Typography variant="h4" fontWeight="bold">
-                    {customers.length + 1420}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Total Customers
-                  </Typography>
-                </Box>
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <TrendingUpIcon color="success" sx={{ mr: 1 }} />
-                <Typography variant="body2" color="success.main">
-                  +146 new this month
-                </Typography>
-              </Box>
-            </CardContent>
-          </MetricCard>
-        </Grid>
-
-        {/* Live Market Data */}
-        <Grid item xs={12} md={8}>
-          <StyledCard>
-            <CardHeader
-              title="Portfolio Performance & Market Data"
-              action={
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Typography variant="h6" color={priceChange >= 0 ? 'success.main' : 'error.main'}>
-                    ${marketPrice.toFixed(2)}
-                  </Typography>
-                  {priceChange >= 0 ? 
-                    <TrendingUpIcon color="success" /> : 
-                    <TrendingDownIcon color="error" />
-                  }
-                </Box>
-              }
-            />
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <ComposedChart data={portfolioData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis yAxisId="left" />
-                  <YAxis yAxisId="right" orientation="right" />
-                  <RechartsTooltip 
-                    formatter={(value, name) => [
-                      typeof value === 'number' ? `$${(value / 1000000).toFixed(1)}M` : value, 
-                      name
-                    ]}
-                  />
-                  <Legend />
-                  <Bar yAxisId="left" dataKey="deposits" fill="#2196f3" name="Deposits" />
-                  <Bar yAxisId="left" dataKey="loans" fill="#4caf50" name="Loans" />
-                  <Line yAxisId="right" type="monotone" dataKey="revenue" stroke="#ff9800" strokeWidth={3} name="Revenue" />
-                </ComposedChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </StyledCard>
-        </Grid>
-
-        {/* Risk Distribution */}
-        <Grid item xs={12} md={4}>
-          <StyledCard>
-            <CardHeader title="Risk Distribution" />
-            <CardContent>
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={riskDistribution}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={40}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {riskDistribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <RechartsTooltip formatter={(value) => [`${value}%`, 'Percentage']} />
-                </PieChart>
-              </ResponsiveContainer>
-              <Box sx={{ mt: 2 }}>
-                {riskDistribution.map((item, index) => (
-                  <Box key={index} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Box 
-                      sx={{ 
-                        width: 12, 
-                        height: 12, 
-                        bgcolor: item.color, 
-                        borderRadius: 1, 
-                        mr: 1 
-                      }} 
-                    />
-                    <Typography variant="body2" sx={{ flex: 1 }}>
-                      {item.name}
-                    </Typography>
-                    <Typography variant="body2" fontWeight="bold">
-                      {item.value}%
-                    </Typography>
-                  </Box>
-                ))}
-              </Box>
-            </CardContent>
-          </StyledCard>
-        </Grid>
-
-        {/* Live Transaction Feed */}
-        <Grid item xs={12} md={6}>
-          <StyledCard>
-            <CardHeader 
-              title="Live Transaction Feed" 
-              action={
-                <Badge badgeContent={transactions.length} color="primary">
-                  <ShowChartIcon />
-                </Badge>
-              }
-            />
-            <CardContent sx={{ maxHeight: 300, overflow: 'auto' }}>
-              <List dense>
-                {transactions.slice(0, 8).map((transaction, index) => (
-                  <React.Fragment key={transaction.id}>
-                    <ListItem 
-                      sx={{ 
-                        backgroundColor: index < 2 ? 'rgba(76, 175, 80, 0.1)' : 'inherit',
-                        borderRadius: 1,
-                        mb: 0.5
-                      }}
-                    >
-                      <ListItemAvatar>
-                        <Avatar 
-                          sx={{ 
-                            bgcolor: transaction.riskScore > 70 ? 'error.main' : 
-                                     transaction.riskScore > 40 ? 'warning.main' : 'success.main',
-                            width: 32,
-                            height: 32
-                          }}
-                        >
-                          <MonetizationOnIcon fontSize="small" />
-                        </Avatar>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Typography variant="body2" fontWeight="bold">
-                              {transaction.type} - ${transaction.amount.toLocaleString()}
-                            </Typography>
-                            <Chip 
-                              label={`Risk: ${transaction.riskScore}`}
-                              size="small"
-                              color={transaction.riskScore > 70 ? 'error' : 
-                                     transaction.riskScore > 40 ? 'warning' : 'success'}
-                            />
-                          </Box>
-                        }
-                        secondary={
-                          <Typography variant="caption" color="text.secondary">
-                            {transaction.customerId.substring(0, 12)}... • {new Date(transaction.timestamp).toLocaleTimeString()}
-                          </Typography>
-                        }
-                      />
-                    </ListItem>
-                    {index < 7 && <Divider />}
-                  </React.Fragment>
-                ))}
-              </List>
-            </CardContent>
-          </StyledCard>
-        </Grid>
-
-        {/* Compliance Dashboard */}
-        <Grid item xs={12} md={6}>
-          <StyledCard>
-            <CardHeader title="Compliance Metrics" />
-            <CardContent>
-              {complianceMetrics.map((metric, index) => (
-                <Box key={index} sx={{ mb: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="body2" fontWeight="medium">
-                      {metric.metric}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {metric.current}/{metric.target}
-                    </Typography>
-                  </Box>
-                  <LinearProgress 
-                    variant="determinate" 
-                    value={metric.completion} 
-                    color={metric.completion >= 95 ? 'success' : metric.completion >= 80 ? 'warning' : 'error'}
-                    sx={{ height: 8, borderRadius: 4 }}
-                  />
-                  <Typography variant="caption" color="text.secondary">
-                    {metric.completion}% Complete
-                  </Typography>
-                </Box>
-              ))}
-            </CardContent>
-          </StyledCard>
-        </Grid>
-
-        {/* Recent Alerts */}
-        <Grid item xs={12}>
-          <StyledCard>
-            <CardHeader 
-              title="Active Alerts & Notifications" 
-              action={
-                <Badge badgeContent={alerts.length + 5} color="error">
-                  <NotificationsIcon />
-                </Badge>
-              }
-            />
-            <CardContent>
+              
               <Grid container spacing={2}>
-                {alerts.slice(0, 3).map((alert) => (
-                  <Grid item xs={12} md={4} key={alert.id}>
-                    <AlertCard severity={alert.severity === 'High' ? 'error' : alert.severity === 'Medium' ? 'warning' : 'info'}>
-                      <CardContent sx={{ p: 2 }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                          {alert.severity === 'High' ? <ErrorIcon color="error" sx={{ mr: 1 }} /> :
-                           alert.severity === 'Medium' ? <WarningIcon color="warning" sx={{ mr: 1 }} /> :
-                           <InfoIcon color="info" sx={{ mr: 1 }} />}
-                          <Typography variant="subtitle2" fontWeight="bold">
-                            {alert.type} Alert
-                          </Typography>
+                {predictions.map((prediction, index) => (
+                  <Grid item xs={12} md={4} key={index}>
+                    <Card sx={{ height: '100%', borderLeft: '4px solid', borderLeftColor: 
+                      prediction.impact === 'high' ? 'error.main' : 
+                      prediction.impact === 'medium' ? 'warning.main' : 'info.main' 
+                    }}>
+                      <CardContent>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                          <Chip 
+                            label={prediction.type.replace('_', ' ')} 
+                            size="small" 
+                            variant="outlined"
+                          />
+                          <Chip 
+                            label={`${(prediction.confidence * 100).toFixed(0)}% confidence`}
+                            size="small"
+                            color={prediction.confidence > 0.8 ? 'success' : 'warning'}
+                          />
                         </Box>
-                        <Typography variant="body2" sx={{ mb: 2 }}>
-                          {alert.description}
+                        
+                        <Typography variant="body1" sx={{ mb: 2, minHeight: 60 }}>
+                          {prediction.description}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {new Date(alert.createdAt).toLocaleDateString()} • {alert.accountId}
+                        
+                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+                          Impact: {prediction.impact} • Timeframe: {prediction.timeframe}
                         </Typography>
+                        
+                        {prediction.recommendations && prediction.recommendations.length > 0 && (
+                          <Typography variant="caption" color="primary">
+                            {prediction.recommendations[0]}
+                          </Typography>
+                        )}
                       </CardContent>
-                    </AlertCard>
+                    </Card>
                   </Grid>
                 ))}
-                
-                {/* Additional Static Alerts */}
-                <Grid item xs={12} md={4}>
-                  <AlertCard severity="warning">
-                    <CardContent sx={{ p: 2 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <WarningIcon color="warning" sx={{ mr: 1 }} />
-                        <Typography variant="subtitle2" fontWeight="bold">
-                          Compliance Review
-                        </Typography>
-                      </Box>
-                      <Typography variant="body2" sx={{ mb: 2 }}>
-                        Quarterly BSA/AML review due in 3 days. 2 pending reports require attention.
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Today • Multiple Accounts
-                      </Typography>
-                    </CardContent>
-                  </AlertCard>
-                </Grid>
-                
-                <Grid item xs={12} md={4}>
-                  <AlertCard severity="success">
-                    <CardContent sx={{ p: 2 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <CheckCircleIcon color="success" sx={{ mr: 1 }} />
-                        <Typography variant="subtitle2" fontWeight="bold">
-                          System Update
-                        </Typography>
-                      </Box>
-                      <Typography variant="body2" sx={{ mb: 2 }}>
-                        AI fraud detection model updated with 12.3% accuracy improvement.
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        2 hours ago • System
-                      </Typography>
-                    </CardContent>
-                  </AlertCard>
-                </Grid>
               </Grid>
-            </CardContent>
-          </StyledCard>
-        </Grid>
-
-        {/* Quick Actions */}
-        <Grid item xs={12}>
-          <StyledCard>
-            <CardHeader title="Quick Actions" />
-            <CardContent>
-              <Grid container spacing={2}>
-                <Grid item xs={6} md={2}>
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    startIcon={<AccountBalanceIcon />}
-                    onClick={() => handleQuickAction('ledger')}
-                    sx={{ py: 1.5 }}
-                  >
-                    FBO Ledger
-                  </Button>
-                </Grid>
-                <Grid item xs={6} md={2}>
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    startIcon={<SecurityIcon />}
-                    onClick={() => handleQuickAction('fraud')}
-                    sx={{ py: 1.5 }}
-                  >
-                    Fraud Detection
-                  </Button>
-                </Grid>
-                <Grid item xs={6} md={2}>
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    startIcon={<AssessmentIcon />}
-                    onClick={() => handleQuickAction('underwriting')}
-                    sx={{ py: 1.5 }}
-                  >
-                    Underwriting
-                  </Button>
-                </Grid>
-                <Grid item xs={6} md={2}>
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    startIcon={<SmartToyIcon />}
-                    onClick={() => handleQuickAction('biometric')}
-                    sx={{ py: 1.5 }}
-                  >
-                    Biometric Auth
-                  </Button>
-                </Grid>
-                <Grid item xs={6} md={2}>
-                  <Button
-                    fullWidth
-                    variant="contained"
-                    startIcon={<SpeedIcon />}
-                    onClick={() => handleQuickAction('tour')}
-                    sx={{ py: 1.5 }}
-                  >
-                    Demo Tour
-                  </Button>
-                </Grid>
-                <Grid item xs={6} md={2}>
-                  <Button
-                    fullWidth
-                    variant="outlined"
-                    startIcon={<FullscreenIcon />}
-                    sx={{ py: 1.5 }}
-                  >
-                    Full Screen
-                  </Button>
-                </Grid>
-              </Grid>
-            </CardContent>
-          </StyledCard>
-        </Grid>
+            </Paper>
+          </Grid>
+        </>
+      )}
+      
+      {/* Activity Charts */}
+      <Grid item xs={12} md={8}>
+        <StyledPaper>
+          <Typography variant="h6" gutterBottom>
+            Transaction Activity
+          </Typography>
+          <div style={{ width: '100%', height: 300 }}>
+            <ResponsiveContainer>
+              <BarChart
+                data={barChartData}
+                margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="transactions" fill="#2e5bff" />
+                <Bar dataKey="accounts" fill="#00c9ff" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </StyledPaper>
       </Grid>
-
-      {/* Floating Action Button */}
-      <Fab 
-        color="primary" 
-        aria-label="ai-insights"
-        sx={{ position: 'fixed', bottom: 16, right: 16 }}
-        onClick={() => handleQuickAction('tour')}
-      >
-        <SmartToyIcon />
-      </Fab>
-
+      
+      <Grid item xs={12} md={4}>
+        <StyledPaper>
+          <Typography variant="h6" gutterBottom>
+            Underwriting Status
+          </Typography>
+          <div style={{ width: '100%', height: 300, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={pieChartData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={90}
+                  fill="#8884d8"
+                  paddingAngle={3}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                >
+                  {pieChartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </StyledPaper>
+      </Grid>
+      
+      {/* Recent Alerts */}
+      <Grid item xs={12}>
+        <StyledPaper>
+          <Typography variant="h6" gutterBottom>
+            Recent Alerts
+          </Typography>
+          <Box sx={{ p: 2, bgcolor: '#fff9f0', borderRadius: 1, mb: 2 }}>
+            <Typography variant="subtitle2" color="warning.main">
+              Suspicious Transaction Alert: Account #7821-093
+            </Typography>
+            <Typography variant="body2">
+              Multiple high-value transfers detected in short time period. Review required.
+            </Typography>
+          </Box>
+          <Box sx={{ p: 2, bgcolor: '#f0f5ff', borderRadius: 1, mb: 2 }}>
+            <Typography variant="subtitle2" color="primary.main">
+              Compliance Update: BSA Filing Due
+            </Typography>
+            <Typography variant="body2">
+              Quarterly BSA/AML reports due in 3 days. 2 pending reports require attention.
+            </Typography>
+          </Box>
+          <Box sx={{ p: 2, bgcolor: '#f0faff', borderRadius: 1 }}>
+            <Typography variant="subtitle2" color="secondary.main">
+              System Notice: Model Retraining Complete
+            </Typography>
+            <Typography variant="body2">
+              Underwriting model retraining complete with 2.3% accuracy improvement.
+            </Typography>
+          </Box>
+        </StyledPaper>
+      </Grid>
+      
       {/* Biometric Authentication Dialog */}
       <BiometricAuth
         open={showBiometric}
         onClose={() => setShowBiometric(false)}
-        onSuccess={() => console.log('Biometric authentication successful')}
+        onSuccess={handleBiometricSuccess}
         authType="fingerprint"
       />
 
@@ -732,8 +397,8 @@ const Dashboard: React.FC = () => {
         onClose={() => setShowTour(false)}
         tourType="overview"
       />
-    </Box>
+    </Grid>
   );
 };
 
-export default Dashboard; 
+export default Dashboard;

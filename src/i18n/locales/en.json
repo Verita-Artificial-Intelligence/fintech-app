@@ -1,0 +1,159 @@
+{
+  "common": {
+    "appName": "Royal Business Bank",
+    "welcome": "Welcome to Royal Business Bank",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "import": "Import",
+    "refresh": "Refresh",
+    "close": "Close",
+    "confirm": "Confirm",
+    "submit": "Submit",
+    "reset": "Reset",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "ledgerMonitoring": "FBO Ledger Monitoring",
+    "fraudDetection": "Fraud Detection & Compliance",
+    "underwriting": "Automated Underwriting",
+    "settings": "Settings",
+    "help": "Help",
+    "logout": "Logout",
+    "profile": "Profile",
+    "notifications": "Notifications"
+  },
+  "dashboard": {
+    "title": "Executive Dashboard",
+    "subtitle": "Real-time business banking insights",
+    "kpi": {
+      "totalDeposits": "Total Deposits",
+      "totalLoans": "Total Loans",
+      "newAccounts": "New Accounts",
+      "activeCustomers": "Active Customers",
+      "complianceScore": "Compliance Score",
+      "fraudAlerts": "Fraud Alerts"
+    },
+    "charts": {
+      "depositTrend": "Deposit Trend",
+      "loanPortfolio": "Loan Portfolio",
+      "riskDistribution": "Risk Distribution",
+      "transactionVolume": "Transaction Volume"
+    },
+    "alerts": {
+      "title": "Recent Alerts",
+      "viewAll": "View All Alerts"
+    }
+  },
+  "ledger": {
+    "title": "FBO Ledger Monitoring",
+    "subtitle": "Real-time transaction monitoring and reconciliation",
+    "search": "Search transactions...",
+    "filters": {
+      "dateRange": "Date Range",
+      "accountType": "Account Type",
+      "status": "Status",
+      "amount": "Amount Range",
+      "riskLevel": "Risk Level"
+    },
+    "table": {
+      "transactionId": "Transaction ID",
+      "timestamp": "Timestamp",
+      "account": "Account",
+      "description": "Description",
+      "amount": "Amount",
+      "balance": "Balance",
+      "status": "Status",
+      "risk": "Risk Score"
+    },
+    "subAccount": {
+      "title": "Sub-Account Explorer",
+      "hierarchy": "Account Hierarchy",
+      "details": "Account Details"
+    }
+  },
+  "fraud": {
+    "title": "Fraud Detection & Compliance",
+    "subtitle": "AI-powered fraud detection and regulatory compliance",
+    "alerts": {
+      "title": "Active Fraud Alerts",
+      "high": "High Risk",
+      "medium": "Medium Risk",
+      "low": "Low Risk"
+    },
+    "sanctions": {
+      "title": "Sanctions Screening",
+      "ofac": "OFAC Check",
+      "pep": "PEP Screening",
+      "adverseMedia": "Adverse Media"
+    },
+    "compliance": {
+      "title": "Compliance Metrics",
+      "bsa": "BSA Compliance",
+      "aml": "AML Status",
+      "kyc": "KYC Completion",
+      "sar": "SAR Filing"
+    }
+  },
+  "underwriting": {
+    "title": "Automated Underwriting Engine",
+    "subtitle": "AI-powered credit decisioning with explainability",
+    "application": {
+      "title": "Loan Application",
+      "businessName": "Business Name",
+      "loanAmount": "Requested Amount",
+      "loanPurpose": "Loan Purpose",
+      "term": "Loan Term",
+      "upload": "Upload Documents"
+    },
+    "decision": {
+      "title": "Credit Decision",
+      "approved": "Approved",
+      "declined": "Declined",
+      "pending": "Pending Review",
+      "score": "Credit Score",
+      "factors": "Decision Factors"
+    },
+    "explainability": {
+      "title": "Decision Explanation",
+      "shap": "SHAP Analysis",
+      "topFactors": "Top Contributing Factors"
+    }
+  },
+  "riskHeatmap": {
+    "title": "Risk Heat Map",
+    "geographic": "Geographic View",
+    "customer": "Customer Risk",
+    "transaction": "Transaction Patterns",
+    "temporal": "Time-based Analysis"
+  },
+  "auth": {
+    "biometric": {
+      "title": "Biometric Authentication",
+      "fingerprint": "Touch ID / Fingerprint",
+      "face": "Face ID",
+      "authenticating": "Authenticating...",
+      "success": "Authentication Successful",
+      "failed": "Authentication Failed"
+    }
+  },
+  "tour": {
+    "welcome": "Welcome to the RBB Demo",
+    "skip": "Skip Tour",
+    "next": "Next",
+    "previous": "Previous",
+    "finish": "Finish Tour"
+  }
+} 
