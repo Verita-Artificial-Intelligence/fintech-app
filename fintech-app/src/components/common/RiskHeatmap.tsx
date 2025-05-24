@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -9,10 +9,12 @@ import {
   Chip,
   Grid,
   Card,
-  CardContent
+  CardContent,
+  CircularProgress
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { Transaction, Customer } from '../../utils/mockDataGenerator';
+import { fdicClient, BankBranch, BranchMetrics, calculateBranchHeat } from '../../api/providers/fdic';
 
 interface RiskHeatmapProps {
   transactions: Transaction[];
@@ -79,6 +81,31 @@ type ViewMode = 'temporal' | 'geographic' | 'customer' | 'transaction';
 const RiskHeatmap: React.FC<RiskHeatmapProps> = ({ transactions, customers }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('temporal');
   const [selectedCell, setSelectedCell] = useState<number | null>(null);
+  const [branches, setBranches] = useState<BankBranch[]>([]);
+  const [branchMetrics, setBranchMetrics] = useState<Map<string, BranchMetrics>>(new Map());
+  const [loading, setLoading] = useState(false);
+  
+  // Load RBB branch data when geographic view is selected
+  useEffect(() => {
+    if (viewMode === 'geographic') {
+      setLoading(true);
+      fdicClient.getRBBBranches().then(async (branchData) => {
+        setBranches(branchData);
+        
+        // Load metrics for each branch
+        const metricsMap = new Map<string, BranchMetrics>();
+        for (const branch of branchData) {
+          const metrics = await fdicClient.getBranchMetrics(branch.id);
+          metricsMap.set(branch.id, metrics);
+        }
+        setBranchMetrics(metricsMap);
+        setLoading(false);
+      }).catch(err => {
+        console.error('Failed to load branch data:', err);
+        setLoading(false);
+      });
+    }
+  }, [viewMode]);
 
   // Generate risk data based on view mode
   const riskData = useMemo(() => {
@@ -256,25 +283,90 @@ const RiskHeatmap: React.FC<RiskHeatmapProps> = ({ transactions, customers }) =>
                   color: 'text.secondary' 
                 }}
               >
-                Global Transaction Risk Distribution
+                RBB Branch Risk Distribution
               </Typography>
               
-              {geographicRisks.map((risk, index) => (
-                <Tooltip 
-                  key={index}
-                  title={`${risk.country}: ${risk.count} transactions, ${risk.avgRisk.toFixed(1)} avg risk`}
-                  arrow
-                >
-                  <RiskIndicator
-                    size={risk.size}
-                    risk={risk.avgRisk}
-                    sx={{
-                      left: `${risk.left}%`,
-                      top: `${risk.top}%`
-                    }}
-                  />
-                </Tooltip>
-              ))}
+              {loading ? (
+                <CircularProgress />
+              ) : (
+                <>
+                  {/* Branch locations */}
+                  {branches.map((branch) => {
+                    const metrics = branchMetrics.get(branch.id);
+                    if (!metrics) return null;
+                    
+                    const heat = calculateBranchHeat(metrics);
+                    // Map real lat/long to percentage positions (simplified for demo)
+                    const left = ((branch.longitude + 130) / 60) * 100; // Rough US mapping
+                    const top = ((50 - branch.latitude) / 30) * 100;
+                    
+                    return (
+                      <Tooltip 
+                        key={branch.id}
+                        title={
+                          <Box>
+                            <Typography variant="caption" display="block" fontWeight="bold">
+                              {branch.branchName}
+                            </Typography>
+                            <Typography variant="caption" display="block">
+                              {branch.city}, {branch.state}
+                            </Typography>
+                            <Typography variant="caption" display="block">
+                              Risk Level: {metrics.riskLevel}
+                            </Typography>
+                            <Typography variant="caption" display="block">
+                              Compliance Score: {metrics.complianceScore}
+                            </Typography>
+                            <Typography variant="caption" display="block">
+                              Fraud Incidents: {metrics.fraudIncidents}
+                            </Typography>
+                          </Box>
+                        }
+                        arrow
+                      >
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            left: `${Math.max(5, Math.min(95, left))}%`,
+                            top: `${Math.max(5, Math.min(95, top))}%`,
+                            width: 16,
+                            height: 16,
+                            borderRadius: '50%',
+                            backgroundColor: heat > 70 ? '#f44336' : heat > 40 ? '#ff9800' : '#4caf50',
+                            border: '2px solid white',
+                            boxShadow: 2,
+                            cursor: 'pointer',
+                            zIndex: 2,
+                            '&:hover': {
+                              transform: 'scale(1.5)',
+                              zIndex: 10
+                            }
+                          }}
+                        />
+                      </Tooltip>
+                    );
+                  })}
+                  
+                  {/* Transaction risk indicators */}
+                  {geographicRisks.slice(0, 10).map((risk, index) => (
+                    <Tooltip 
+                      key={`tx-${index}`}
+                      title={`${risk.country}: ${risk.count} transactions, ${risk.avgRisk.toFixed(1)} avg risk`}
+                      arrow
+                    >
+                      <RiskIndicator
+                        size={risk.size}
+                        risk={risk.avgRisk}
+                        sx={{
+                          left: `${risk.left}%`,
+                          top: `${risk.top}%`,
+                          opacity: 0.5
+                        }}
+                      />
+                    </Tooltip>
+                  ))}
+                </>
+              )}
             </GeographicRiskMap>
           ) : (
             <HeatmapContainer>

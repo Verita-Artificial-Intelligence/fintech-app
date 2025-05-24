@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -36,7 +36,11 @@ import {
   Tooltip,
   Alert,
   AlertTitle,
-  CircularProgress
+  CircularProgress,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import SearchIcon from '@mui/icons-material/Search';
@@ -58,6 +62,8 @@ import PsychologyIcon from '@mui/icons-material/Psychology';
 import RuleIcon from '@mui/icons-material/Rule';
 import WarningIcon from '@mui/icons-material/Warning';
 import TuneIcon from '@mui/icons-material/Tune';
+import DownloadIcon from '@mui/icons-material/Download';
+import AssessmentIcon from '@mui/icons-material/Assessment';
 import {
   BarChart,
   Bar,
@@ -74,8 +80,16 @@ import {
   PolarAngleAxis,
   PolarRadiusAxis,
   Radar,
-  Legend
+  Legend,
+  ComposedChart,
+  Line,
+  Area
 } from 'recharts';
+import { useTranslation } from 'react-i18next';
+// Sprint 3 imports
+import { experianClient, CreditReport } from '../api/providers/experian';
+import { underwritingModel, LoanApplication, UnderwritingDecision, generateShapWaterfallData } from '../ml/underwritingModel';
+import { sbaFormFiller, downloadSBAForm, SBAFormData } from '../utils/sbaFormFiller';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -304,10 +318,33 @@ const decisionsPieData = [
 const COLORS = ['#4caf50', '#2196f3', '#f44336'];
 
 const UnderwritingEngine: React.FC = () => {
+  const { t } = useTranslation();
   const [activeStep, setActiveStep] = useState(0);
   const [tabValue, setTabValue] = useState(0);
   const [openDialog, setOpenDialog] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState(false);
+  const [creditReport, setCreditReport] = useState<CreditReport | null>(null);
+  const [underwritingDecision, setUnderwritingDecision] = useState<UnderwritingDecision | null>(null);
+  const [loadingCredit, setLoadingCredit] = useState(false);
+  const [loadingDecision, setLoadingDecision] = useState(false);
+  const [showSHAP, setShowSHAP] = useState(false);
+  const [applicationForm, setApplicationForm] = useState<LoanApplication>({
+    businessName: '',
+    requestedAmount: 0,
+    loanPurpose: '',
+    loanTerm: 60,
+    industry: '',
+    annualRevenue: 0,
+    monthlyRevenue: 0,
+    yearsInBusiness: 0,
+    employeeCount: 0,
+    creditScore: 0,
+    debtServiceCoverageRatio: 0,
+    collateralValue: 0,
+    existingDebt: 0,
+    cashFlow: 0,
+    bankingRelationshipMonths: 0
+  });
   
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -353,6 +390,99 @@ const UnderwritingEngine: React.FC = () => {
     if (score >= 80) return '#4caf50';
     if (score >= 60) return '#ff9800';
     return '#f44336';
+  };
+  
+  // Fetch credit report from Experian
+  const fetchCreditReport = async (businessName: string, taxId: string = '12-3456789') => {
+    setLoadingCredit(true);
+    try {
+      const report = await experianClient.getBusinessCreditReport(businessName, taxId);
+      setCreditReport(report);
+      // Update application form with credit score
+      setApplicationForm(prev => ({
+        ...prev,
+        creditScore: report.creditScore.score,
+        businessName: businessName
+      }));
+      // Auto-advance to next step
+      handleNext();
+    } catch (error) {
+      console.error('Failed to fetch credit report:', error);
+    } finally {
+      setLoadingCredit(false);
+    }
+  };
+  
+  // Run ML underwriting model
+  const runUnderwritingModel = async () => {
+    setLoadingDecision(true);
+    try {
+      // Calculate DSCR if we have credit report
+      let dscr = applicationForm.debtServiceCoverageRatio;
+      if (creditReport && applicationForm.cashFlow > 0) {
+        dscr = await experianClient.calculateDSCR(creditReport, applicationForm.cashFlow);
+      }
+      
+      const updatedApplication = {
+        ...applicationForm,
+        debtServiceCoverageRatio: dscr,
+        creditScore: creditReport?.creditScore.score || applicationForm.creditScore
+      };
+      
+      const decision = await underwritingModel.predict(updatedApplication);
+      setUnderwritingDecision(decision);
+      // Auto-advance to decision step
+      setActiveStep(3);
+    } catch (error) {
+      console.error('Underwriting model error:', error);
+    } finally {
+      setLoadingDecision(false);
+    }
+  };
+  
+  // Download SBA Form
+  const handleDownloadSBAForm = async () => {
+    if (!underwritingDecision || underwritingDecision.decision !== 'Approved') {
+      return;
+    }
+    
+    const formData: SBAFormData = {
+      businessName: applicationForm.businessName,
+      taxId: creditReport?.business.taxId || '12-3456789',
+      businessAddress: creditReport?.business.address || {
+        street: '123 Main St',
+        city: 'Los Angeles',
+        state: 'CA',
+        zipCode: '90001'
+      },
+      businessPhone: '(310) 555-0123',
+      businessEmail: 'contact@' + applicationForm.businessName.toLowerCase().replace(/\s+/g, '') + '.com',
+      dateEstablished: new Date(Date.now() - applicationForm.yearsInBusiness * 365 * 24 * 60 * 60 * 1000).toISOString(),
+      stateOfIncorporation: 'CA',
+      ownerName: 'Business Owner',
+      ownerTitle: 'CEO',
+      ownershipPercentage: 100,
+      ownerSSN: '123-45-6789',
+      ownerAddress: {
+        street: '456 Executive Dr',
+        city: 'Los Angeles',
+        state: 'CA',
+        zipCode: '90001'
+      },
+      loanAmount: underwritingDecision.approvedAmount || applicationForm.requestedAmount,
+      loanPurpose: applicationForm.loanPurpose,
+      loanTerm: applicationForm.loanTerm,
+      collateralOffered: (applicationForm.collateralValue && applicationForm.collateralValue > 0) ? 'Business assets' : undefined,
+      annualRevenue: applicationForm.annualRevenue,
+      netProfit: applicationForm.annualRevenue * 0.15,
+      totalAssets: applicationForm.annualRevenue * 0.8,
+      totalLiabilities: applicationForm.existingDebt,
+      numberOfEmployees: applicationForm.employeeCount,
+      workingCapital: applicationForm.requestedAmount * 0.6,
+      equipmentPurchase: applicationForm.requestedAmount * 0.4
+    };
+    
+    await downloadSBAForm(formData, `SBA_Form_${applicationForm.businessName.replace(/\s+/g, '_')}.json`);
   };
   
   return (

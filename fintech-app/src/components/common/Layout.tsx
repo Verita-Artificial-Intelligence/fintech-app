@@ -25,6 +25,8 @@ import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import SecurityIcon from '@mui/icons-material/Security';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import LanguageToggle from './LanguageToggle';
 
 const drawerWidth: number = 260;
 
@@ -81,6 +83,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
   
   const toggleDrawer = () => {
     setOpen(!open);
@@ -95,10 +98,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
   
   const menuItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-    { text: 'FBO-Ledger Monitoring', icon: <AccountBalanceIcon />, path: '/ledger-monitoring' },
-    { text: 'Fraud Detection', icon: <SecurityIcon />, path: '/fraud-detection' },
-    { text: 'Underwriting Engine', icon: <AssessmentIcon />, path: '/underwriting' },
+    { text: t('nav.dashboard'), icon: <DashboardIcon />, path: '/' },
+    { text: t('nav.ledgerMonitoring'), icon: <AccountBalanceIcon />, path: '/ledger-monitoring' },
+    { text: t('nav.fraudDetection'), icon: <SecurityIcon />, path: '/fraud-detection' },
+    { text: t('nav.underwriting'), icon: <AssessmentIcon />, path: '/underwriting' },
   ];
   
   return (
@@ -124,9 +127,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             noWrap
             sx={{ flexGrow: 1 }}
           >
-            Royal Business Bank - Financial Services
+            {t('common.appName')}
           </Typography>
-          <IconButton color="inherit">
+          <LanguageToggle />
+          <IconButton color="inherit" sx={{ ml: 2 }}>
             <Badge badgeContent={4} color="secondary">
               <NotificationsIcon />
             </Badge>
@@ -163,7 +167,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           }}
         >
           <Typography variant="h6" sx={{ flexGrow: 1, ml: 2, fontWeight: 'bold' }}>
-            Royal Business Bank
+            {t('common.appName')}
           </Typography>
           <IconButton onClick={toggleDrawer}>
             <ChevronLeftIcon />

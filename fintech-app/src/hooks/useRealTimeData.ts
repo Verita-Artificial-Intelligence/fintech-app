@@ -1,5 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { mockDataGenerator, Transaction, ComplianceAlert, Customer } from '../utils/mockDataGenerator';
+import { plaidClient, formatPlaidTransaction } from '../api/providers/plaid';
+import { sanctionsClient, SanctionsCheckResult } from '../api/providers/sanctions';
 
 interface RealTimeDataHook {
   transactions: Transaction[];
@@ -14,6 +16,8 @@ interface RealTimeDataHook {
   };
   subscribeToTransactions: () => void;
   unsubscribeFromTransactions: () => void;
+  accounts: any[];
+  sanctionsAlerts: SanctionsCheckResult[];
 }
 
 export const useRealTimeData = (): RealTimeDataHook => {
@@ -21,18 +25,93 @@ export const useRealTimeData = (): RealTimeDataHook => {
   const [alerts, setAlerts] = useState<ComplianceAlert[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isConnected, setIsConnected] = useState(false);
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [sanctionsAlerts, setSanctionsAlerts] = useState<SanctionsCheckResult[]>([]);
   const [metrics, setMetrics] = useState({
     totalVolume: 0,
     transactionCount: 0,
     alertCount: 0,
     avgRiskScore: 0
   });
+  const plaidUnsubscribe = useRef<(() => void) | null>(null);
+  const sanctionsUnsubscribe = useRef<(() => void) | null>(null);
 
-  // Simulate WebSocket connection for real-time updates
+  // Enhanced real-time data subscription with Plaid integration
   const subscribeToTransactions = useCallback(() => {
     setIsConnected(true);
     
-    // Simulate new transactions every 3-8 seconds
+    // Connect to Plaid and start streaming
+    plaidClient.connect().then(async () => {
+      // Get initial accounts
+      const plaidAccounts = await plaidClient.getAccounts();
+      setAccounts(plaidAccounts);
+      
+      // Subscribe to Plaid transaction stream
+      plaidUnsubscribe.current = plaidClient.streamTransactions((plaidTx) => {
+        const formattedTx = formatPlaidTransaction(plaidTx);
+        
+        // Convert to app Transaction format
+        const newTransaction: Transaction = {
+          id: formattedTx.id,
+          timestamp: new Date(formattedTx.timestamp),
+          type: formattedTx.type === 'credit' ? 'Deposit' : 'Withdrawal',
+          amount: formattedTx.amount,
+          currency: 'USD',
+          accountId: formattedTx.accountId,
+          subAccountId: 'SUB-DEFAULT',
+          customerId: 'CUST-PLAID-001',
+          status: formattedTx.status === 'pending' ? 'Pending' : formattedTx.status === 'completed' ? 'Completed' : 'Failed',
+          riskScore: formattedTx.riskScore,
+          counterparty: formattedTx.merchantName || 'Unknown',
+          purpose: formattedTx.category || 'General',
+          fees: 0,
+          complianceFlags: [],
+          geolocation: {
+            lat: formattedTx.location?.city ? 37.7749 : 0,
+            lng: formattedTx.location?.city ? -122.4194 : 0,
+            country: formattedTx.location?.country || 'US'
+          }
+        };
+        
+        setTransactions(prev => [newTransaction, ...prev].slice(0, 100));
+        
+        // Run sanctions check on merchant name
+        if (formattedTx.merchantName) {
+          sanctionsClient.checkOFAC(formattedTx.merchantName, 'organization').then(result => {
+            if (result.status !== 'CLEAR') {
+              setSanctionsAlerts(prev => [result, ...prev].slice(0, 50));
+              
+              // Create compliance alert
+              const alert: ComplianceAlert = {
+                id: `alert_${Date.now()}`,
+                type: 'OFAC',
+                severity: result.riskLevel === 'CRITICAL' ? 'Critical' : result.riskLevel === 'HIGH' ? 'High' : 'Medium',
+                description: `${result.checkType} Alert: ${result.entityName} - ${result.status}`,
+                accountId: formattedTx.accountId,
+                customerId: 'CUST-PLAID-001',
+                transactionIds: [formattedTx.id],
+                createdAt: new Date(),
+                status: 'Open',
+                assignedTo: 'Compliance Team',
+                dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+                regulatoryDeadline: result.riskLevel === 'CRITICAL' ? 
+                  new Date(Date.now() + 24 * 60 * 60 * 1000) : // 24 hours for critical
+                  undefined
+              };
+              
+              setAlerts(prev => [alert, ...prev].slice(0, 50));
+            }
+          });
+        }
+      });
+      
+      // Subscribe to sanctions monitoring
+      sanctionsUnsubscribe.current = sanctionsClient.subscribeToAlerts((alert) => {
+        setSanctionsAlerts(prev => [alert, ...prev].slice(0, 50));
+      });
+    });
+    
+    // Also run original mock data generation in parallel
     const interval = setInterval(() => {
       // Generate mock customers and accounts for new transactions
       const customers = mockDataGenerator.generateCustomers(50);
@@ -135,6 +214,8 @@ export const useRealTimeData = (): RealTimeDataHook => {
     isConnected,
     metrics,
     subscribeToTransactions,
-    unsubscribeFromTransactions
+    unsubscribeFromTransactions,
+    accounts,
+    sanctionsAlerts
   };
 }; 

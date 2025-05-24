@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  rbb-demo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: rbb-fintech-demo:latest
+    container_name: rbb-demo-app
+    ports:
+      - "3006:80"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    networks:
+      - rbb-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  rbb-network:
+    driver: bridge 
