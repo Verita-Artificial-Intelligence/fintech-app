@@ -1,12 +1,18 @@
-import React from 'react';
-import { Grid, Paper, Typography, Button, Box } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Grid, Paper, Typography, Button, Box, Chip, Alert, Card, CardContent, Switch, FormControlLabel } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import SecurityIcon from '@mui/icons-material/Security';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
 import { useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
+import { useRealTimeData } from '../hooks/useRealTimeData';
+import { aiInsights } from '../utils/aiInsights';
+import BiometricAuth from '../components/common/BiometricAuth';
+import DemoTour from '../components/common/DemoTour';
 import {
   BarChart,
   Bar,
@@ -62,20 +68,106 @@ const COLORS = ['#002366', '#0056b3', '#808080'];
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const theme = useTheme();
+  const [showBiometric, setShowBiometric] = useState(false);
+  const [showTour, setShowTour] = useState(false);
+  const [realtimeEnabled, setRealtimeEnabled] = useState(false);
+  const [predictions, setPredictions] = useState<any[]>([]);
+  
+  // Real-time data hook
+  const { 
+    transactions, 
+    alerts, 
+    isConnected, 
+    metrics, 
+    subscribeToTransactions, 
+    unsubscribeFromTransactions 
+  } = useRealTimeData();
+  
+  // Effect for managing real-time connection
+  useEffect(() => {
+    if (realtimeEnabled) {
+      subscribeToTransactions();
+    } else {
+      unsubscribeFromTransactions();
+    }
+    
+    return () => {
+      unsubscribeFromTransactions();
+    };
+  }, [realtimeEnabled, subscribeToTransactions, unsubscribeFromTransactions]);
+
+  // Generate AI predictions when data changes
+  useEffect(() => {
+    if (transactions.length > 0) {
+      const compliancePredictions = aiInsights.generateCompliancePredictions(transactions, []);
+      const fraudPredictions = aiInsights.generateFraudPredictions(transactions);
+      const businessInsights = aiInsights.generateBusinessInsights(transactions, []);
+      
+      setPredictions([...compliancePredictions, ...fraudPredictions, ...businessInsights].slice(0, 3));
+    }
+  }, [transactions]);
   
   const handleNavigate = (path: string) => {
     navigate(path);
+  };
+
+  const handleBiometricSuccess = () => {
+    console.log('Dashboard biometric authentication successful');
   };
   
   return (
     <Grid container spacing={3}>
       <Grid item xs={12}>
-        <Typography variant="h4" gutterBottom>
-          Dashboard
-        </Typography>
-        <Typography variant="body1" color="text.secondary" paragraph>
-          Welcome to Royal Business Bank. View your key metrics and access all platform features.
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+          <Box>
+            <Typography variant="h4" gutterBottom>
+              Dashboard
+              {isConnected && (
+                <Chip 
+                  label="LIVE" 
+                  size="small" 
+                  color="success" 
+                  sx={{ ml: 2, animation: 'pulse 1.5s infinite' }}
+                />
+              )}
+            </Typography>
+            <Typography variant="body1" color="text.secondary" paragraph>
+              Welcome to Royal Business Bank. View your key metrics and access all platform features.
+            </Typography>
+            {realtimeEnabled && (
+              <Alert severity="info" sx={{ mt: 1, maxWidth: 600 }}>
+                Real-time analytics active - AI insights update automatically as new data arrives
+              </Alert>
+            )}
+          </Box>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <FormControlLabel
+              control={
+                <Switch 
+                  checked={realtimeEnabled} 
+                  onChange={() => setRealtimeEnabled(!realtimeEnabled)}
+                  color="primary"
+                />
+              }
+              label="Real-time Mode"
+            />
+            <Box>
+              <Button 
+                variant="outlined" 
+                onClick={() => setShowBiometric(true)}
+                sx={{ mr: 1 }}
+              >
+                Secure Access
+              </Button>
+              <Button 
+                variant="outlined" 
+                onClick={() => setShowTour(true)}
+              >
+                Demo Tour
+              </Button>
+            </Box>
+          </Box>
+        </Box>
       </Grid>
       
       {/* Product Cards */}
@@ -144,6 +236,65 @@ const Dashboard: React.FC = () => {
           </Box>
         </ProductCard>
       </Grid>
+      
+      {/* AI-Powered Insights */}
+      {predictions.length > 0 && (
+        <>
+          <Grid item xs={12}>
+            <Paper sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <SmartToyIcon color="primary" sx={{ mr: 1 }} />
+                <Typography variant="h6">AI-Powered Insights</Typography>
+                <Chip 
+                  label={`${predictions.length} predictions`} 
+                  size="small" 
+                  sx={{ ml: 2 }}
+                />
+              </Box>
+              
+              <Grid container spacing={2}>
+                {predictions.map((prediction, index) => (
+                  <Grid item xs={12} md={4} key={index}>
+                    <Card sx={{ height: '100%', borderLeft: '4px solid', borderLeftColor: 
+                      prediction.impact === 'high' ? 'error.main' : 
+                      prediction.impact === 'medium' ? 'warning.main' : 'info.main' 
+                    }}>
+                      <CardContent>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                          <Chip 
+                            label={prediction.type.replace('_', ' ')} 
+                            size="small" 
+                            variant="outlined"
+                          />
+                          <Chip 
+                            label={`${(prediction.confidence * 100).toFixed(0)}% confidence`}
+                            size="small"
+                            color={prediction.confidence > 0.8 ? 'success' : 'warning'}
+                          />
+                        </Box>
+                        
+                        <Typography variant="body1" sx={{ mb: 2, minHeight: 60 }}>
+                          {prediction.description}
+                        </Typography>
+                        
+                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+                          Impact: {prediction.impact} • Timeframe: {prediction.timeframe}
+                        </Typography>
+                        
+                        {prediction.recommendations && prediction.recommendations.length > 0 && (
+                          <Typography variant="caption" color="primary">
+                            {prediction.recommendations[0]}
+                          </Typography>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            </Paper>
+          </Grid>
+        </>
+      )}
       
       {/* Activity Charts */}
       <Grid item xs={12} md={8}>
@@ -231,6 +382,21 @@ const Dashboard: React.FC = () => {
           </Box>
         </StyledPaper>
       </Grid>
+      
+      {/* Biometric Authentication Dialog */}
+      <BiometricAuth
+        open={showBiometric}
+        onClose={() => setShowBiometric(false)}
+        onSuccess={handleBiometricSuccess}
+        authType="fingerprint"
+      />
+
+      {/* Demo Tour */}
+      <DemoTour
+        isOpen={showTour}
+        onClose={() => setShowTour(false)}
+        tourType="overview"
+      />
     </Grid>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Box, 
   Typography, 
@@ -23,7 +23,10 @@ import {
   Menu,
   MenuItem,
   Badge,
-  Divider
+  Divider,
+  Switch,
+  FormControlLabel,
+  Alert
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import SearchIcon from '@mui/icons-material/Search';
@@ -47,6 +50,10 @@ import {
   BarChart,
   Bar
 } from 'recharts';
+import { useRealTimeData } from '../hooks/useRealTimeData';
+import BiometricAuth from '../components/common/BiometricAuth';
+import RiskHeatmap from '../components/common/RiskHeatmap';
+import DemoTour from '../components/common/DemoTour';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -111,96 +118,40 @@ const complianceData = [
   { month: 'May', alerts: 25, reports: 18 },
 ];
 
-const mockTransactions = [
-  { 
-    id: 1, 
-    account: 'ACCT-87392-01', 
-    subAccount: 'SA-10093',
-    customer: 'TechSolutions Inc.', 
-    type: 'Deposit', 
-    amount: 25000.50, 
-    date: '2023-04-10', 
-    status: 'Completed',
-    risk: 'Low'
-  },
-  { 
-    id: 2, 
-    account: 'ACCT-46372-03', 
-    subAccount: 'SA-20045',
-    customer: 'Global Traders Ltd', 
-    type: 'Transfer', 
-    amount: 150000.00, 
-    date: '2023-04-10', 
-    status: 'Pending Review',
-    risk: 'Medium'
-  },
-  { 
-    id: 3, 
-    account: 'ACCT-92845-02', 
-    subAccount: 'SA-30076',
-    customer: 'Innovate Partners', 
-    type: 'Withdrawal', 
-    amount: 18750.25, 
-    date: '2023-04-09', 
-    status: 'Completed',
-    risk: 'Low'
-  },
-  { 
-    id: 4, 
-    account: 'ACCT-12093-01', 
-    subAccount: 'SA-40123',
-    customer: 'NextGen Financials', 
-    type: 'International Transfer', 
-    amount: 87500.00, 
-    date: '2023-04-09', 
-    status: 'Flagged',
-    risk: 'High'
-  },
-  { 
-    id: 5, 
-    account: 'ACCT-76452-04', 
-    subAccount: 'SA-50014',
-    customer: 'Apex Investments', 
-    type: 'Deposit', 
-    amount: 225000.75, 
-    date: '2023-04-08', 
-    status: 'Completed',
-    risk: 'Low'
-  },
-];
 
-const mockAlerts = [
-  {
-    id: 1,
-    type: 'BSA Alert',
-    description: 'Multiple large transactions exceeding $10,000 threshold',
-    account: 'ACCT-12093-01',
-    date: '2023-04-10',
-    priority: 'High'
-  },
-  {
-    id: 2,
-    type: 'AML Flag',
-    description: 'Unusual pattern detected - Multiple small deposits followed by large transfer',
-    account: 'ACCT-46372-03',
-    date: '2023-04-09',
-    priority: 'Medium'
-  },
-  {
-    id: 3,
-    type: 'SAR Required',
-    description: 'Suspicious activity report required for international transfers to flagged region',
-    account: 'ACCT-12093-01',
-    date: '2023-04-09',
-    priority: 'High'
-  },
-];
 
 const LedgerMonitoring: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null);
+  const [showBiometric, setShowBiometric] = useState(false);
+  const [showTour, setShowTour] = useState(false);
+  const [realtimeEnabled, setRealtimeEnabled] = useState(false);
   
+  // Real-time data hook
+  const { 
+    transactions, 
+    alerts, 
+    customers,
+    isConnected, 
+    metrics, 
+    subscribeToTransactions, 
+    unsubscribeFromTransactions 
+  } = useRealTimeData();
+  
+  // Effect for managing real-time connection
+  useEffect(() => {
+    if (realtimeEnabled) {
+      subscribeToTransactions();
+    } else {
+      unsubscribeFromTransactions();
+    }
+    
+    return () => {
+      unsubscribeFromTransactions();
+    };
+  }, [realtimeEnabled, subscribeToTransactions, unsubscribeFromTransactions]);
+
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
@@ -220,12 +171,30 @@ const LedgerMonitoring: React.FC = () => {
   const handleFilterClose = () => {
     setFilterAnchorEl(null);
   };
+
+  const handleRealtimeToggle = () => {
+    setRealtimeEnabled(!realtimeEnabled);
+  };
+
+  const handleSecureAccess = () => {
+    setShowBiometric(true);
+  };
+
+  const handleBiometricSuccess = () => {
+    console.log('Biometric authentication successful');
+  };
   
-  const getRiskColor = (risk: string) => {
+  const getRiskColor = (risk: string | number) => {
+    if (typeof risk === 'number') {
+      if (risk > 70) return 'error';
+      if (risk > 40) return 'warning';
+      return 'success';
+    }
     switch(risk) {
       case 'Low': return 'success';
       case 'Medium': return 'warning';
       case 'High': return 'error';
+      case 'Critical': return 'error';
       default: return 'default';
     }
   };
@@ -235,6 +204,7 @@ const LedgerMonitoring: React.FC = () => {
       case 'Low': return 'info';
       case 'Medium': return 'warning';
       case 'High': return 'error';
+      case 'Critical': return 'error';
       default: return 'default';
     }
   };
@@ -254,26 +224,68 @@ const LedgerMonitoring: React.FC = () => {
         <div>
           <Typography variant="h4" gutterBottom>
             Unified FBO-Ledger Monitoring
+            {isConnected && (
+              <Chip 
+                label="LIVE" 
+                size="small" 
+                color="success" 
+                sx={{ ml: 2, animation: 'pulse 1.5s infinite' }}
+              />
+            )}
           </Typography>
           <Typography variant="body1" color="text.secondary">
             Real-time visibility into all accounts, transactions, and compliance activities
           </Typography>
+          {realtimeEnabled && (
+            <Alert severity="info" sx={{ mt: 1, maxWidth: 500 }}>
+              Live data streaming active - New transactions appear every 3-8 seconds
+            </Alert>
+          )}
         </div>
-        <Box>
-          <Button 
-            variant="contained" 
-            color="primary" 
-            startIcon={<DescriptionIcon />}
-            sx={{ mr: 2 }}
-          >
-            Generate Report
-          </Button>
-          <Button 
-            variant="outlined"
-            startIcon={<DownloadIcon />}
-          >
-            Export Data
-          </Button>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <Box>
+            <FormControlLabel
+              control={
+                <Switch 
+                  checked={realtimeEnabled} 
+                  onChange={handleRealtimeToggle}
+                  color="primary"
+                />
+              }
+              label="Real-time Mode"
+            />
+            <Button 
+              variant="outlined" 
+              onClick={handleSecureAccess}
+              startIcon={<VisibilityIcon />}
+              sx={{ ml: 2 }}
+            >
+              Secure Access
+            </Button>
+            <Button 
+              variant="outlined" 
+              onClick={() => setShowTour(true)}
+              sx={{ ml: 1 }}
+            >
+              Demo Tour
+            </Button>
+          </Box>
+          <Box>
+            <Button 
+              variant="contained" 
+              color="primary" 
+              startIcon={<DescriptionIcon />}
+              sx={{ mr: 2 }}
+            >
+              Generate Report
+            </Button>
+            <Button 
+              variant="outlined"
+              startIcon={<DownloadIcon />}
+            >
+              Export Data
+            </Button>
+          </Box>
         </Box>
       </Box>
       
@@ -287,10 +299,10 @@ const LedgerMonitoring: React.FC = () => {
                 <Typography variant="h6">Total Accounts</Typography>
               </Box>
               <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1 }}>
-                1,349
+                {(1349 + Math.floor(metrics.transactionCount / 10)).toLocaleString()}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                146 new accounts this month
+                {146 + Math.floor(metrics.transactionCount / 20)} new accounts this month
               </Typography>
             </CardContent>
           </StyledCard>
@@ -304,10 +316,10 @@ const LedgerMonitoring: React.FC = () => {
                 <Typography variant="h6">Transaction Volume</Typography>
               </Box>
               <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1 }}>
-                $24.8M
+                ${((24800000 + metrics.totalVolume) / 1000000).toFixed(1)}M
               </Typography>
               <Typography variant="body2">
-                Up 12% from last month
+                +{metrics.transactionCount} transactions today
               </Typography>
             </CardContent>
           </HighlightCard>
@@ -321,10 +333,10 @@ const LedgerMonitoring: React.FC = () => {
                 <Typography variant="h6">Active Alerts</Typography>
               </Box>
               <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1 }}>
-                28
+                {28 + alerts.length}
               </Typography>
               <Typography variant="body2" color="error.main">
-                7 high-priority alerts
+                {alerts.filter(alert => alert.severity === 'High' || alert.severity === 'Critical').length} high-priority alerts
               </Typography>
             </CardContent>
           </StyledCard>
@@ -338,10 +350,10 @@ const LedgerMonitoring: React.FC = () => {
                 <Typography variant="h6">Sub-Accounts</Typography>
               </Box>
               <Typography variant="h3" sx={{ fontWeight: 'bold', mb: 1 }}>
-                5,201
+                {(5201 + Math.floor(metrics.transactionCount / 5)).toLocaleString()}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                18% increase year-to-date
+                Avg risk: {metrics.avgRiskScore.toFixed(1)}
               </Typography>
             </CardContent>
           </StyledCard>
@@ -408,6 +420,14 @@ const LedgerMonitoring: React.FC = () => {
         </Grid>
       </Grid>
       
+      {/* Advanced Risk Heatmap */}
+      <Box sx={{ mb: 3 }}>
+        <RiskHeatmap 
+          transactions={transactions} 
+          customers={customers}
+        />
+      </Box>
+      
       {/* Tabs for Transaction Monitor and Alerts */}
       <Paper sx={{ width: '100%', mb: 3 }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -419,7 +439,7 @@ const LedgerMonitoring: React.FC = () => {
             <Tab label="Transaction Monitor" />
             <Tab 
               label={
-                <Badge color="error" badgeContent={3} sx={{ pr: 2 }}>
+                <Badge color="error" badgeContent={alerts.length} sx={{ pr: 2 }}>
                   Compliance Alerts
                 </Badge>
               } 
@@ -487,14 +507,28 @@ const LedgerMonitoring: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {mockTransactions.map((transaction) => (
-                  <TableRow key={transaction.id}>
-                    <TableCell>{transaction.account}</TableCell>
-                    <TableCell>{transaction.subAccount}</TableCell>
-                    <TableCell>{transaction.customer}</TableCell>
+                {transactions.slice(0, 10).map((transaction) => (
+                  <TableRow 
+                    key={transaction.id}
+                    sx={{ 
+                      backgroundColor: transactions.indexOf(transaction) < 3 && realtimeEnabled ? 
+                        'rgba(76, 175, 80, 0.1)' : 'inherit',
+                      transition: 'background-color 0.5s ease'
+                    }}
+                  >
+                    <TableCell>{transaction.accountId}</TableCell>
+                    <TableCell>{transaction.subAccountId}</TableCell>
+                    <TableCell>
+                      {transaction.customerId.length > 15 ? 
+                        `${transaction.customerId.substring(0, 15)}...` : 
+                        transaction.customerId
+                      }
+                    </TableCell>
                     <TableCell>{transaction.type}</TableCell>
-                    <TableCell align="right">${transaction.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</TableCell>
-                    <TableCell>{transaction.date}</TableCell>
+                    <TableCell align="right">
+                      ${transaction.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                    </TableCell>
+                    <TableCell>{new Date(transaction.timestamp).toLocaleDateString()}</TableCell>
                     <TableCell>
                       <Chip 
                         label={transaction.status} 
@@ -504,9 +538,10 @@ const LedgerMonitoring: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <Chip 
-                        label={transaction.risk} 
+                        label={`Risk: ${transaction.riskScore}`}
                         size="small" 
-                        color={getRiskColor(transaction.risk) as any}
+                        color={transaction.riskScore > 70 ? 'error' : 
+                               transaction.riskScore > 40 ? 'warning' : 'success'}
                       />
                     </TableCell>
                     <TableCell align="center">
@@ -545,7 +580,7 @@ const LedgerMonitoring: React.FC = () => {
         <TabPanel value={tabValue} index={1}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
             <Typography variant="subtitle1">
-              Active Compliance Alerts (3 new alerts)
+              Active Compliance Alerts ({alerts.length} new alerts)
             </Typography>
             <Box>
               <Button 
@@ -563,26 +598,35 @@ const LedgerMonitoring: React.FC = () => {
             </Box>
           </Box>
           
-          {mockAlerts.map((alert) => (
+          {alerts.slice(0, 5).map((alert) => (
             <Paper key={alert.id} sx={{ p: 2, mb: 2 }}>
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={8}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                     <Chip 
-                      label={alert.priority} 
+                      label={alert.severity} 
                       size="small" 
-                      color={getPriorityColor(alert.priority) as any}
+                      color={getPriorityColor(alert.severity) as any}
                       sx={{ mr: 1 }}
                     />
                     <Typography variant="subtitle1">
                       {alert.type}
                     </Typography>
+                    <Chip 
+                      label={alert.status}
+                      size="small"
+                      variant="outlined"
+                      sx={{ ml: 1 }}
+                    />
                   </Box>
                   <Typography variant="body1">
                     {alert.description}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    Account: {alert.account} • {alert.date}
+                    Account: {alert.accountId} • {new Date(alert.createdAt).toLocaleDateString()}
+                    {alert.regulatoryDeadline && (
+                      <> • Due: {new Date(alert.regulatoryDeadline).toLocaleDateString()}</>
+                    )}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={4} sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
@@ -590,12 +634,18 @@ const LedgerMonitoring: React.FC = () => {
                     Review
                   </Button>
                   <Button variant="outlined" color="error">
-                    Flag
+                    Escalate
                   </Button>
                 </Grid>
               </Grid>
             </Paper>
           ))}
+          
+          {alerts.length === 0 && (
+            <Alert severity="success" sx={{ mt: 2 }}>
+              No active compliance alerts. All transactions are within normal parameters.
+            </Alert>
+          )}
         </TabPanel>
         
         {/* Account Explorer Tab */}
@@ -635,6 +685,21 @@ const LedgerMonitoring: React.FC = () => {
           </Typography>
         </Box>
       </Paper>
+
+      {/* Biometric Authentication Dialog */}
+      <BiometricAuth
+        open={showBiometric}
+        onClose={() => setShowBiometric(false)}
+        onSuccess={handleBiometricSuccess}
+        authType="fingerprint"
+      />
+
+      {/* Demo Tour */}
+      <DemoTour
+        isOpen={showTour}
+        onClose={() => setShowTour(false)}
+        tourType="ledger"
+      />
     </Box>
   );
 };
