@@ -87,3 +87,15 @@ If you encounter any issues:
 - `/src/api/` - API service interfaces
 - `/src/utils/` - Utility functions
 - `/src/hooks/` - Custom React hooks
+## Machine Learning Fraud Detection
+
+A sample Python script demonstrates how to train a simple logistic regression model for fraud detection using synthetic data. The script saves a model file named `fraud_model.pkl` in the project root.
+
+Run the training script:
+
+```bash
+python3 scripts/fraud_detection_model.py
+```
+
+You will see classification metrics and the resulting model file.
+
