@@ -33,6 +33,7 @@ import {
   AlertTitle,
   Alert
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import { styled } from '@mui/material/styles';
 import SearchIcon from '@mui/icons-material/Search';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -48,6 +49,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import DescriptionIcon from '@mui/icons-material/Description';
+import { predictRisk } from '../ml/AdvancedFraudModel';
 import {
   LineChart,
   Line,
@@ -218,6 +220,7 @@ const FraudDetection: React.FC = () => {
   const [tabValue, setTabValue] = useState(0);
   const [simulating, setSimulating] = useState(false);
   const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null);
+  const navigate = useNavigate();
   
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -446,9 +449,19 @@ const FraudDetection: React.FC = () => {
             </Box>
           </Box>
           
-          {mockAlerts.map((alert) => (
-            <AlertItem 
-              key={alert.id} 
+          {mockAlerts.map((alert) => {
+            const severityMap: Record<string, number> = { High: 3, Medium: 2, Low: 1 };
+            const features = [
+              (severityMap[alert.severity] || 1) / 3,
+              alert.description.length / 100,
+              alert.customer.length / 20,
+              alert.type.length / 20,
+              alert.status === 'Resolved' ? 0 : 1,
+            ];
+            const risk = predictRisk(features);
+            return (
+            <AlertItem
+              key={alert.id}
               sx={{ borderLeftColor: getAlertBorderColor(alert.severity) }}
             >
               <Grid container spacing={2}>
@@ -479,9 +492,16 @@ const FraudDetection: React.FC = () => {
                     <strong>Customer:</strong> {alert.customer}
                     {alert.cardNumber && <span> | <strong>Card:</strong> {alert.cardNumber}</span>}
                   </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    ML Risk Score: {(risk * 100).toFixed(1)}%
+                  </Typography>
                 </Grid>
                 <Grid item xs={12} sm={3} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-                  <Button variant="outlined" sx={{ mr: 1 }}>
+                  <Button
+                    variant="outlined"
+                    sx={{ mr: 1 }}
+                    onClick={() => navigate('/cases')}
+                  >
                     Investigate
                   </Button>
                   <Button variant="contained" color="error" startIcon={<FlagIcon />}>
@@ -490,7 +510,8 @@ const FraudDetection: React.FC = () => {
                 </Grid>
               </Grid>
             </AlertItem>
-          ))}
+            );
+          })}
         </TabPanel>
         
         {/* Compliance Dashboard Tab */}

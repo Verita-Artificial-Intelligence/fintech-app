@@ -24,6 +24,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import SecurityIcon from '@mui/icons-material/Security';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import GavelIcon from '@mui/icons-material/Gavel';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const drawerWidth: number = 260;
@@ -98,6 +99,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
     { text: 'FBO-Ledger Monitoring', icon: <AccountBalanceIcon />, path: '/ledger-monitoring' },
     { text: 'Fraud Detection', icon: <SecurityIcon />, path: '/fraud-detection' },
+    { text: 'Case Management', icon: <GavelIcon />, path: '/cases' },
     { text: 'Underwriting Engine', icon: <AssessmentIcon />, path: '/underwriting' },
   ];
   
