@@ -11,6 +11,8 @@ A comprehensive financial technology platform with three main modules:
    - Live card-fraud alerts and threat-simulation "red team" testing
    - Continuous PCI/GDPR/SOC 2 evidence packs
    - KPI dashboard for fraud rate, MTTR, and open gaps
+   - Fraud case management with ticket tracking and resolution notes
+   - Neural network scoring for fraud alerts
 
 3. **Automated Underwriting Engine**
    - OCR/LLM pipeline that scores W-2s, bank statements, FICO, DSCR, etc.
@@ -70,6 +72,8 @@ This color scheme reflects Royal Business Bank's commitment to professionalism a
 - Responsive design for all device sizes
 - Rich data visualization
 - Comprehensive financial tools
+- Fraud case management dashboard
+- Neural-network fraud risk scoring
 - Secure authentication and user management
 
 ## Troubleshooting
