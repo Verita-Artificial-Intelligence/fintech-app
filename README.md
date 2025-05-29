@@ -9,6 +9,7 @@ A comprehensive financial technology platform with three main modules:
 
 2. **Fraud-Detection & Compliance Toolkit**
    - Live card-fraud alerts and threat-simulation "red team" testing
+   - Case management workflow for tracking and resolving fraud alerts
    - Continuous PCI/GDPR/SOC 2 evidence packs
    - KPI dashboard for fraud rate, MTTR, and open gaps
 
