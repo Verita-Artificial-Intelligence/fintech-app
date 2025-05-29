@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import LedgerMonitoring from './pages/LedgerMonitoring';
 import FraudDetection from './pages/FraudDetection';
 import UnderwritingEngine from './pages/UnderwritingEngine';
+import CaseManagement from './pages/CaseManagement';
 import NotFound from './pages/NotFound';
 
 const theme = createTheme({
@@ -97,6 +98,7 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/ledger-monitoring" element={<LedgerMonitoring />} />
             <Route path="/fraud-detection" element={<FraudDetection />} />
+            <Route path="/case-management" element={<CaseManagement />} />
             <Route path="/underwriting" element={<UnderwritingEngine />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
